@@ -15,15 +15,15 @@
  */
 package org.apache.ibatis.reflection.property;
 
-import java.util.Locale;
-
 import org.apache.ibatis.reflection.ReflectionException;
+
+import java.util.Locale;
 
 /**
  * @author Clinton Begin
  */
 /**
- * 属性命名器
+ * 属性命名器 工具类 不用特地看
  * 
  */
 public final class PropertyNamer {

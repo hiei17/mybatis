@@ -32,9 +32,9 @@ public class PropertyTokenizer implements Iterable<PropertyTokenizer>, Iterator<
   private String index; //0
   private String children; //birthdate.year
 
+  //构造方法立马就解析好了
   public PropertyTokenizer(String fullname) {
-      //person[0].birthdate.year
-      //找.
+      //person[0].birthdate.year//找.
     int delim = fullname.indexOf('.');
     if (delim > -1) {
       name = fullname.substring(0, delim);

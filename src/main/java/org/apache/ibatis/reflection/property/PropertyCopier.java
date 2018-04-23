@@ -30,6 +30,12 @@ public final class PropertyCopier {
     // Prevent Instantiation of Static Class
   }
 
+  /**
+   *
+   * @param type 同属于的类
+   * @param sourceBean 数据来源实例
+   * @param destinationBean 被填入的实例
+   */
     //复制属性,类似功能的还有别的类，
     //如apache commons beanutil 的BeanUtils.copyProperties
     //Spring 的BeanUtils.copyProperties

@@ -38,7 +38,7 @@ public interface ObjectFactory {
 
   /**
    * Creates a new object with default constructor. 
-   * 生产对象
+   * 生产对象 通过无参构造器
    * @param type Object type
    * @return
    */

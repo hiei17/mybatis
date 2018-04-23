@@ -15,20 +15,11 @@
  */
 package org.apache.ibatis.reflection.factory;
 
+import org.apache.ibatis.reflection.ReflectionException;
+
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import org.apache.ibatis.reflection.ReflectionException;
+import java.util.*;
 
 /**
  * @author Clinton Begin
@@ -46,6 +37,15 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
     return create(type, null, null);
   }
 
+
+  /**
+   * Creates a new object with the specified constructor and params.
+   * 生产对象，使用指定的构造函数和构造函数参数
+   * @param type Object type 想要的类型 可能是接口 是接口就我们擅自决定一个最常用的实现类
+   * @param constructorArgTypes Constructor argument types 参数类型
+   * @param constructorArgs Constructor argument values 参数值
+   * @return 简单地包装了一下反射
+   */
   @SuppressWarnings("unchecked")
   @Override
   public <T> T create(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
@@ -63,10 +63,13 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
     // no props for default
   }
 
+
   //2.实例化类
   private <T> T instantiateClass(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     try {
       Constructor<T> constructor;
+
+      //无参构造器
       //如果没有传入constructor，调用空构造函数，核心是调用Constructor.newInstance
       if (constructorArgTypes == null || constructorArgs == null) {
         constructor = type.getDeclaredConstructor();
@@ -75,6 +78,8 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
         }
         return constructor.newInstance();
       }
+
+      //有参构造器
       //如果传入constructor，调用传入的构造函数，核心是调用Constructor.newInstance
       constructor = type.getDeclaredConstructor(constructorArgTypes.toArray(new Class[constructorArgTypes.size()]));
       if (!constructor.isAccessible()) {
