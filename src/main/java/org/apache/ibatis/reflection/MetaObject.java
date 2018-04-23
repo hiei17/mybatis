@@ -142,10 +142,15 @@ public class MetaObject {
     }
   }
 
-  //设置值
-  //如person[0].birthdate.year
+
+    /**
+     *
+     * @param name  如person[0].birthdate.year
+     * @param value
+     */
   public void setValue(String name, Object value) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
+
     if (prop.hasNext()) {
       MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
@@ -160,10 +165,11 @@ public class MetaObject {
       }
       //递归调用setValue
       metaValue.setValue(prop.getChildren(), value);
-    } else {
-        //到了最后一层了，所以委派给ObjectWrapper.set
-      objectWrapper.set(prop, value);
     }
+
+      //到了最后一层了，所以委派给ObjectWrapper.set
+      objectWrapper.set(prop, value);
+
   }
 
   //为某个属性生成元对象

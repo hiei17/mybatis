@@ -60,6 +60,8 @@ public class Reflector {
   private String[] readablePropertyNames = EMPTY_STRING_ARRAY;
   //setter的属性列表
   private String[] writeablePropertyNames = EMPTY_STRING_ARRAY;
+
+  //有这个名的get set 和这个名的field都算
   //setter的方法列表
   private Map<String, Invoker> setMethods = new HashMap<String, Invoker>();
   //getter的方法列表 is get
@@ -68,6 +70,7 @@ public class Reflector {
   private Map<String, Class<?>> setTypes = new HashMap<String, Class<?>>();
   //getter的类型列表
   private Map<String, Class<?>> getTypes = new HashMap<String, Class<?>>();
+
   //无参构造函数
   private Constructor<?> defaultConstructor;
 
@@ -75,16 +78,20 @@ public class Reflector {
 
   private Reflector(Class<?> clazz) {
     type = clazz;
-    //加入构造函数
+    //加入构造函数 defaultConstructor
     addDefaultConstructor(clazz);
-    //加入getter
+
+    //加入getter :getMethods setTypes
     addGetMethods(clazz);
     //加入setter
     addSetMethods(clazz);
-    //加入字段
+    //加入字段 到get set的方法集和 type集
     addFields(clazz);
+
+    //get方法的所以属性名数组
     readablePropertyNames = getMethods.keySet().toArray(new String[getMethods.keySet().size()]);
     writeablePropertyNames = setMethods.keySet().toArray(new String[setMethods.keySet().size()]);
+
     for (String propName : readablePropertyNames) {
         //这里为了能找到某一个属性，就把他变成大写作为map的key。。。
       caseInsensitivePropertyMap.put(propName.toUpperCase(Locale.ENGLISH), propName);
@@ -113,9 +120,12 @@ public class Reflector {
   }
 
   private void addGetMethods(Class<?> cls) {
+
     Map<String, List<Method>> conflictingGetters = new HashMap<String, List<Method>>();
+
     //这里getter和setter都调用了getClassMethods，有点浪费效率了。不妨把addGetMethods,addSetMethods合并成一个方法叫addMethods
     Method[] methods = getClassMethods(cls);
+
     for (Method method : methods) {
       String name = method.getName();
       if (name.startsWith("get") && name.length() > 3) {
@@ -134,35 +144,41 @@ public class Reflector {
   }
 
   private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
+
     for (String propName : conflictingGetters.keySet()) {
+
       List<Method> getters = conflictingGetters.get(propName);
       Iterator<Method> iterator = getters.iterator();
       Method firstMethod = iterator.next();
       if (getters.size() == 1) {
         addGetMethod(propName, firstMethod);
-      } else {
-        Method getter = firstMethod;
-        Class<?> getterType = firstMethod.getReturnType();
-        while (iterator.hasNext()) {
-          Method method = iterator.next();
-          Class<?> methodType = method.getReturnType();
-          if (methodType.equals(getterType)) {
-            throw new ReflectionException("Illegal overloaded getter method with ambiguous type for property " 
-                + propName + " in class " + firstMethod.getDeclaringClass()
-                + ".  This breaks the JavaBeans " + "specification and can cause unpredicatble results.");
-          } else if (methodType.isAssignableFrom(getterType)) {
-            // OK getter type is descendant
-          } else if (getterType.isAssignableFrom(methodType)) {
-            getter = method;
-            getterType = methodType;
-          } else {
-            throw new ReflectionException("Illegal overloaded getter method with ambiguous type for property " 
-                + propName + " in class " + firstMethod.getDeclaringClass()
-                + ".  This breaks the JavaBeans " + "specification and can cause unpredicatble results.");
-          }
-        }
-        addGetMethod(propName, getter);
+        continue;
       }
+
+      Method getter = firstMethod;
+      Class<?> getterType = firstMethod.getReturnType();
+      while (iterator.hasNext()) {
+        Method method = iterator.next();
+        Class<?> methodType = method.getReturnType();
+
+        //todo 保留一个get方法
+        if (methodType.equals(getterType)) {
+          throw new ReflectionException("Illegal overloaded getter method with ambiguous type for property "
+              + propName + " in class " + firstMethod.getDeclaringClass()
+              + ".  This breaks the JavaBeans " + "specification and can cause unpredicatble results.");
+        } else if (methodType.isAssignableFrom(getterType)) {//返回值范围扩大了
+          // OK getter type is descendant
+        } else if (getterType.isAssignableFrom(methodType)) {//返回值范围缩小了
+          getter = method;
+          getterType = methodType;
+        } else {
+          throw new ReflectionException("Illegal overloaded getter method with ambiguous type for property "
+              + propName + " in class " + firstMethod.getDeclaringClass()
+              + ".  This breaks the JavaBeans " + "specification and can cause unpredicatble results.");
+        }
+      }
+      addGetMethod(propName, getter);
+
     }
   }
 
@@ -188,6 +204,7 @@ public class Reflector {
     resolveSetterConflicts(conflictingSetters);
   }
 
+  //方法名-是这个方法名的list<method>(之前的操作只保证每个方法签名唯一 可能有重名的)
   private void addMethodConflict(Map<String, List<Method>> conflictingMethods, String name, Method method) {
     List<Method> list = conflictingMethods.get(name);
     if (list == null) {
@@ -238,6 +255,8 @@ public class Reflector {
     }
   }
 
+  //在构造方法就调用
+  //本类 父类 field不是final或static的 如果对应 get set方法没加过 就计入对应set get的方法集合和类型集合
   private void addFields(Class<?> clazz) {
     Field[] fields = clazz.getDeclaredFields();
     for (Field field : fields) {
@@ -248,6 +267,7 @@ public class Reflector {
           // Ignored. This is only a final precaution, nothing we can do.
         }
       }
+
       if (field.isAccessible()) {
         if (!setMethods.containsKey(field.getName())) {
           // issue #379 - removed the check for final because JDK 1.5 allows
@@ -299,6 +319,8 @@ public class Reflector {
   private Method[] getClassMethods(Class<?> cls) {
     Map<String, Method> uniqueMethods = new HashMap<String, Method>();
     Class<?> currentClass = cls;
+
+    //本类 接口 父类 这样的顺序找到所有方法
     while (currentClass != null) {
       addUniqueMethods(uniqueMethods, currentClass.getDeclaredMethods());
 
@@ -317,36 +339,51 @@ public class Reflector {
     return methods.toArray(new Method[methods.size()]);
   }
 
+    /**
+     *
+     * @param uniqueMethods 签名-方法的map
+     * @param methods 待处理的方法
+     */
   private void addUniqueMethods(Map<String, Method> uniqueMethods, Method[] methods) {
     for (Method currentMethod : methods) {
-      if (!currentMethod.isBridge()) {
-          //取得签名
-        String signature = getSignature(currentMethod);
-        // check to see if the method is already known
-        // if it is known, then an extended class must have
-        // overridden a method
-        if (!uniqueMethods.containsKey(signature)) {
-          if (canAccessPrivateMethods()) {
-            try {
-              currentMethod.setAccessible(true);
-            } catch (Exception e) {
-              // Ignored. This is only a final precaution, nothing we can do.
-            }
-          }
-
-          uniqueMethods.put(signature, currentMethod);
-        }
-      }
+        addUniqueMethod(uniqueMethods, currentMethod);
     }
   }
 
+    private void addUniqueMethod(Map<String, Method> uniqueMethods, Method currentMethod) {
+        if (!currentMethod.isBridge()) {
+            //取得方法签名
+          String signature = getSignature(currentMethod);
+
+          //如果已经有了 就是子类覆盖过了 本方法不用了
+          if (!uniqueMethods.containsKey(signature)) {
+            if (canAccessPrivateMethods()) {
+              try {
+                currentMethod.setAccessible(true);
+              } catch (Exception e) {
+                // Ignored. This is only a final precaution, nothing we can do.
+              }
+            }
+
+            uniqueMethods.put(signature, currentMethod);
+          }
+        }
+    }
+
+    //返回方法签名
   private String getSignature(Method method) {
     StringBuilder sb = new StringBuilder();
+
+    //返回类型
     Class<?> returnType = method.getReturnType();
     if (returnType != null) {
       sb.append(returnType.getName()).append('#');
     }
+
+    //方法名
     sb.append(method.getName());
+
+    //参数名
     Class<?>[] parameters = method.getParameterTypes();
     for (int i = 0; i < parameters.length; i++) {
       if (i == 0) {
@@ -356,6 +393,7 @@ public class Reflector {
       }
       sb.append(parameters[i].getName());
     }
+    //返回类型#方法名:参数,参数,参数....
     return sb.toString();
   }
 
