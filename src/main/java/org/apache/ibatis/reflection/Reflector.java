@@ -68,7 +68,7 @@ public class Reflector {
   private Map<String, Class<?>> setTypes = new HashMap<String, Class<?>>();
   //getter的类型列表
   private Map<String, Class<?>> getTypes = new HashMap<String, Class<?>>();
-  //构造函数
+  //无参构造函数
   private Constructor<?> defaultConstructor;
 
   private Map<String, String> caseInsensitivePropertyMap = new HashMap<String, String>();
