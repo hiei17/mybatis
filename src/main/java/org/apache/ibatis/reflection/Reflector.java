@@ -62,7 +62,7 @@ public class Reflector {
   private String[] writeablePropertyNames = EMPTY_STRING_ARRAY;
   //setter的方法列表
   private Map<String, Invoker> setMethods = new HashMap<String, Invoker>();
-  //getter的方法列表
+  //getter的方法列表 is get
   private Map<String, Invoker> getMethods = new HashMap<String, Invoker>();
   //setter的类型列表
   private Map<String, Class<?>> setTypes = new HashMap<String, Class<?>>();
