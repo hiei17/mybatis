@@ -36,7 +36,7 @@ import org.junit.Test;
 
 public class MetaObjectTest {
 
-  @Test//todo
+  @Test
   public void shouldGetAndSetField() {
     RichType rich = new RichType();
     MetaObject meta = SystemMetaObject.forObject(rich);
