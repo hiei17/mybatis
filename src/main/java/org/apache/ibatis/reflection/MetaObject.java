@@ -15,17 +15,13 @@
  */
 package org.apache.ibatis.reflection;
 
+import org.apache.ibatis.reflection.factory.ObjectFactory;
+import org.apache.ibatis.reflection.property.PropertyTokenizer;
+import org.apache.ibatis.reflection.wrapper.*;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.ibatis.reflection.factory.ObjectFactory;
-import org.apache.ibatis.reflection.property.PropertyTokenizer;
-import org.apache.ibatis.reflection.wrapper.BeanWrapper;
-import org.apache.ibatis.reflection.wrapper.CollectionWrapper;
-import org.apache.ibatis.reflection.wrapper.MapWrapper;
-import org.apache.ibatis.reflection.wrapper.ObjectWrapper;
-import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
 
 /**
  * @author Clinton Begin
@@ -37,13 +33,13 @@ import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
  */
 public class MetaObject {
 
-    //有一个原来的对象，对象包装器，对象工厂，对象包装器工厂
-  private Object originalObject;
-  private ObjectWrapper objectWrapper;
-  private ObjectFactory objectFactory;
-  private ObjectWrapperFactory objectWrapperFactory;
+  private Object originalObject;//原来的对象
+  private ObjectWrapper objectWrapper;//对象包装器:内部使用它
+  private ObjectFactory objectFactory;//对象工厂
+  private ObjectWrapperFactory objectWrapperFactory;//对象包装器工厂
 
   private MetaObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory) {
+
     this.originalObject = object;
     this.objectFactory = objectFactory;
     this.objectWrapperFactory = objectWrapperFactory;
@@ -51,28 +47,36 @@ public class MetaObject {
     if (object instanceof ObjectWrapper) {
         //如果对象本身已经是ObjectWrapper型，则直接赋给objectWrapper
       this.objectWrapper = (ObjectWrapper) object;
-    } else if (objectWrapperFactory.hasWrapperFor(object)) {
+    }
+
+    if (objectWrapperFactory.hasWrapperFor(object)) {
         //如果有包装器,调用ObjectWrapperFactory.getWrapperFor
       this.objectWrapper = objectWrapperFactory.getWrapperFor(this, object);
-    } else if (object instanceof Map) {
+    }
+
+    if (object instanceof Map) {
         //如果是Map型，返回MapWrapper
       this.objectWrapper = new MapWrapper(this, (Map) object);
-    } else if (object instanceof Collection) {
+    }
+
+    if (object instanceof Collection) {
         //如果是Collection型，返回CollectionWrapper
       this.objectWrapper = new CollectionWrapper(this, (Collection) object);
-    } else {
-        //除此以外，返回BeanWrapper
-      this.objectWrapper = new BeanWrapper(this, object);
     }
+
+    //除此以外，返回BeanWrapper
+    this.objectWrapper = new BeanWrapper(this, object);
+
   }
 
   public static MetaObject forObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory) {
     if (object == null) {
         //处理一下null,将null包装起来
       return SystemMetaObject.NULL_META_OBJECT;
-    } else {
-      return new MetaObject(object, objectFactory, objectWrapperFactory);
     }
+
+    return new MetaObject(object, objectFactory, objectWrapperFactory);
+
   }
 
   public ObjectFactory getObjectFactory() {
@@ -125,21 +129,24 @@ public class MetaObject {
 
   //取得值
   //如person[0].birthdate.year
-  //具体测试用例可以看MetaObjectTest
-  public Object getValue(String name) {
+  //具体测试用例可以看MetaObjectTest//对象级别的方法 用objectWrapper
+  public Object getValue(String name) {//orders[0].id
+
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
-      MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());
+
+      MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());//orders[0]
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
           //如果上层就是null了，那就结束，返回null
         return null;
-      } else {
-          //否则继续看下一层，递归调用getValue
-       return metaValue.getValue(prop.getChildren());
       }
-    } else {
-      return objectWrapper.get(prop);
+        //否则继续看下一层，递归调用getValue
+       return metaValue.getValue(prop.getChildren());//对order getId
+
     }
+
+    return objectWrapper.get(prop);
+
   }
 
 
