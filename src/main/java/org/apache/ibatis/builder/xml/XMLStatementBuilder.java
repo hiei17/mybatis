@@ -57,7 +57,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
-  //解析语句(select|insert|update|delete)
+  //mark 解析语句(select|insert|update|delete)
 //<select
 //  id="selectPerson"
 //  parameterType="int"

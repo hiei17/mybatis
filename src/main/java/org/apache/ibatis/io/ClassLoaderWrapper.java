@@ -208,12 +208,13 @@ public class ClassLoaderWrapper {
 
   //一共5个类加载器
   ClassLoader[] getClassLoaders(ClassLoader classLoader) {
-    return new ClassLoader[]{
-        classLoader,
-        defaultClassLoader,
-        Thread.currentThread().getContextClassLoader(),
-        getClass().getClassLoader(),
-        systemClassLoader};
+    ClassLoader[] classLoaders = {
+            classLoader,//用户指定类加载器优先
+            defaultClassLoader,//null
+            Thread.currentThread().getContextClassLoader(),//以下3个都一样
+            getClass().getClassLoader(),
+            systemClassLoader};
+    return classLoaders;
   }
 
 }

@@ -46,7 +46,7 @@ import org.apache.ibatis.session.SqlSession;
 public class DefaultSqlSession implements SqlSession {
 
   private Configuration configuration;
-  private Executor executor;
+  private Executor executor;//默认是CachingExecutor里面包SimpleExecutor
 
   /**
    * 是否自动提交

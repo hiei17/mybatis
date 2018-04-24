@@ -131,7 +131,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       builderAssistant.setCurrentNamespace(namespace);
       //2.配置cache-ref
       cacheRefElement(context.evalNode("cache-ref"));
-      //3.配置cache
+      //3.配置cache mark 二级(全局夸session)缓存
       cacheElement(context.evalNode("cache"));
       //4.配置parameterMap(已经废弃,老式风格的参数映射)
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
@@ -232,29 +232,37 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   //3.配置cache
-//  <cache
-//  eviction="FIFO"
-//  flushInterval="60000"
-//  size="512"
-//  readOnly="true"/>
+/*
+<cache
+    eviction="FIFO"
+    flushInterval="60000"
+    size="512"
+    readOnly="true
+ />
+ */
   private void cacheElement(XNode context) throws Exception {
-    if (context != null) {
-      String type = context.getStringAttribute("type", "PERPETUAL");
-      Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
-      String eviction = context.getStringAttribute("eviction", "LRU");
-      Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
-      Long flushInterval = context.getLongAttribute("flushInterval");
-      Integer size = context.getIntAttribute("size");
-      boolean readWrite = !context.getBooleanAttribute("readOnly", false);
-      boolean blocking = context.getBooleanAttribute("blocking", false);
-      //读入额外的配置信息，易于第三方的缓存扩展,例:
+
+    if (context == null) {
+      return;
+    }
+
+    String type = context.getStringAttribute("type", "PERPETUAL");
+    Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+    String eviction = context.getStringAttribute("eviction", "LRU");
+    Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+    Long flushInterval = context.getLongAttribute("flushInterval");
+    Integer size = context.getIntAttribute("size");
+    boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+    boolean blocking = context.getBooleanAttribute("blocking", false);
+    //读入额外的配置信息，易于第三方的缓存扩展,例:
 //    <cache type="com.domain.something.MyCustomCache">
 //      <property name="cacheFile" value="/tmp/my-custom-cache.tmp"/>
 //    </cache>
-      Properties props = context.getChildrenAsProperties();
-      //调用builderAssistant.useNewCache
-      builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
-    }
+    Properties props = context.getChildrenAsProperties();
+    //调用builderAssistant.useNewCache
+    builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
+
+
   }
 
   //4.配置parameterMap

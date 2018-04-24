@@ -55,13 +55,15 @@ import org.apache.ibatis.type.TypeHandler;
 /**
  * 映射构建器助手，建造者模式,继承BaseBuilder
  *
+ * 每个XMLMappedBuilder构造的时候都会实例化这个属性
+ *
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
   //每个助手都有1个namespace,resource,cache
   private String currentNamespace;
   private String resource;
-  private Cache currentCache;
+  private Cache currentCache;//mapper配置文件中cache节点
   private boolean unresolvedCacheRef; // issue #676
 
   public MapperBuilderAssistant(Configuration configuration, String resource) {
@@ -127,6 +129,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
   }
 
+  //mapper配置文件中的cache节点 解析成Cache对象 放在本对象的 currentCache 字段
   public Cache useNewCache(Class<? extends Cache> typeClass,
       Class<? extends Cache> evictionClass,
       Long flushInterval,
@@ -134,6 +137,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+
       //这里面又判断了一下是否为null就用默认值，有点和XMLMapperBuilder.cacheElement逻辑重复了
     typeClass = valueOrDefault(typeClass, PerpetualCache.class);
     evictionClass = valueOrDefault(evictionClass, LruCache.class);
@@ -313,6 +317,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     //2.结果映射
     setStatementResultMap(resultMap, resultType, resultSetType, statementBuilder);
     setStatementCache(isSelect, flushCache, useCache, currentCache, statementBuilder);
+    //mark 设置二级缓存currentCache是xxMap.xml里面 解析<cache 标签而来的
 
     MappedStatement statement = statementBuilder.build();
     //建造好调用configuration.addMappedStatement
@@ -324,12 +329,16 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return value == null ? defaultValue : value;
   }
 
+  //最终mapper配置文件中的<cache/>被设置到了XMLMapperBuilder的builderAssistant属性中
+  // ，XMLMapperBuilder中使用XMLStatementBuilder遍历CRUD节点，遍历CRUD节点的时候将这个cache节点设置到这些CRUD节点中，
+  // 这个cache就是所谓的二级缓存！
   private void setStatementCache(
       boolean isSelect,
       boolean flushCache,
       boolean useCache,
       Cache cache,
       MappedStatement.Builder statementBuilder) {
+
     flushCache = valueOrDefault(flushCache, !isSelect);
     useCache = valueOrDefault(useCache, isSelect);
     statementBuilder.flushCacheRequired(flushCache);

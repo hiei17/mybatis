@@ -18,7 +18,7 @@ package org.apache.ibatis.reflection;
 import static org.junit.Assert.*;
 
 import org.apache.ibatis.domain.misc.RichType;
-import org.apache.ibatis.domain.misc.generics.GenericConcrete;
+import org.apache.ibatis.domain.misc.generics.*;
 import org.junit.Test;
 
 import java.util.HashMap;

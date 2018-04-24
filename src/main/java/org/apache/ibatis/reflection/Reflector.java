@@ -62,7 +62,7 @@ public class Reflector {
     //无参构造函数
     private Constructor<?> defaultConstructor;
 
-    //属性map  全大写-属性名
+    //属性map  全大写-属性名 取用的时候都转大写来取 消除大小写差别
     private Map<String, String> caseInsensitivePropertyMap = new HashMap<String, String>();
 
     //在构造方法里面都解析好了 以上集合被填充

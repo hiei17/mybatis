@@ -158,10 +158,10 @@ public class MetaObject {
           // don't instantiate child path if value is null
           //如果上层就是null了，还得看有没有儿子，没有那就结束
           return;
-        } else {
-            //否则还得new一个，委派给ObjectWrapper.instantiatePropertyValue
-          metaValue = objectWrapper.instantiatePropertyValue(name, prop, objectFactory);
         }
+        //否则还得new一个，委派给ObjectWrapper.instantiatePropertyValue
+        metaValue = objectWrapper.instantiatePropertyValue(name, prop, objectFactory);
+
       }
       //递归调用setValue
       metaValue.setValue(prop.getChildren(), value);

@@ -91,12 +91,19 @@ public class MetaClass {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
       MetaClass metaProp = metaClassForProperty(prop.getName());
+      //递归
       return metaProp.getSetterType(prop.getChildren());
-    } else {
-      return reflector.getSetterType(prop.getName());
     }
+    //递归出口
+    return reflector.getSetterType(prop.getName());
+
   }
 
+  /**
+   * 通过reflector的最终返回值类型
+   * @param name 属性表达式
+   * @return class
+   */
   public Class<?> getGetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
@@ -113,19 +120,21 @@ public class MetaClass {
   }
 
   /**
-   *
+   *用reflector得到这个属性表达式get返回值类型
    * @param prop 属性表达式
    * @return 对应class
    */
   private Class<?> getGetterType(PropertyTokenizer prop) {
 
-    //这个属性名 对应的返回类型
-    Class<?> type = reflector.getGetterType(prop.getName());
+    //这个属性名 对应的返回类型(reflector构造时已经放好了map
+    String propName = prop.getName();
+    Class<?> type = reflector.getGetterType(propName);
 
     //有[] 并且是集合类 如    //orders[0]
     if (prop.getIndex() != null && Collection.class.isAssignableFrom(type)) {
 
-      Type returnType = getGenericGetterType(prop.getName());
+      //去对应invoke里面反射拿返回类型
+      Type returnType = getGenericGetterType(propName);
 
       //是返回类型里面有类型参数
       if (returnType instanceof ParameterizedType) {
@@ -137,8 +146,8 @@ public class MetaClass {
           if (returnType instanceof Class) {
             //orders=List<Order> 返回Order
             type = (Class<?>) returnType;
-          } else if (returnType instanceof ParameterizedType) {//还是带类型参数的类型 算了 Map<k,v> 就取Map了
-            //orders=List<Map<k,v>> 返回map
+          } else if (returnType instanceof ParameterizedType) {//还是带类型参数的类型  List<List<Long>>
+            //orders=List<List<Long>> 返回List
             type = (Class<?>) ((ParameterizedType) returnType).getRawType();
           }
         }

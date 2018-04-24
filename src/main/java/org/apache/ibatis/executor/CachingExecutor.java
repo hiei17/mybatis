@@ -37,10 +37,21 @@ import org.apache.ibatis.transaction.Transaction;
  */
 /**
  * 二级缓存执行器
+ *
+ * 二级缓存跟一级缓存不同，一级缓存不需要配置任何东西，且默认打开。 二级缓存就需要配置一些东西。
+
+ 本文就说下最简单的配置，在mapper文件上加上这句配置即可：
+
+ <cache/>
+
+
+另外:
+ mybatis全局配置文件中的setting中的cacheEnabled没特地设为false
+ mapper配置文件中的select属性useCache没特地设为false
  */
 public class CachingExecutor implements Executor {
 
-  private Executor delegate;
+  private Executor delegate;//一般是SimpleExecutor
   private TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
@@ -75,10 +86,20 @@ public class CachingExecutor implements Executor {
   @Override
   public int update(MappedStatement ms, Object parameterObject) throws SQLException {
 	//刷新缓存完再update
-    flushCacheIfRequired(ms);
+    flushCacheIfRequired(ms);//清除二级缓存
     return delegate.update(ms, parameterObject);
   }
 
+  /**
+   *
+   * @param ms 语句
+   * @param parameterObject 参数
+   * @param rowBounds 分页用的
+   * @param resultHandler 结果
+   * @param <E>
+   * @return
+   * @throws SQLException
+   */
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameterObject);
@@ -91,7 +112,7 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
-    Cache cache = ms.getCache();
+    Cache cache = ms.getCache();//拿到map.xml文件里面的缓存配置
     //默认情况下是没有开启缓存的(二级缓存).要开启二级缓存,你需要在你的 SQL 映射文件中添加一行: <cache/>
     //简单的说，就是先查CacheKey，查不到再委托给实际的执行器去查
     if (cache != null) {
@@ -99,14 +120,15 @@ public class CachingExecutor implements Executor {
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, parameterObject, boundSql);
         @SuppressWarnings("unchecked")
-        List<E> list = (List<E>) tcm.getObject(cache, key);
-        if (list == null) {
+        List<E> list = (List<E>) tcm.getObject(cache, key);//先查CacheKey
+        if (list == null) {//查不到再委托给实际的执行器去查
           list = delegate.<E> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
-          tcm.putObject(cache, key, list); // issue #578 and #116
+          tcm.putObject(cache, key, list); // issue #578 and #116//查询结果放入缓存
         }
         return list;
       }
     }
+    //实际上还是交给包在里面的Executor 一般是SimpleExecutor
     return delegate.<E> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 

@@ -504,10 +504,14 @@ public class Configuration {
   }
 
   //产生执行器
+  //Executor根据ExecutorType的不同而创建，最常用的是SimpleExecutor
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
+
     executorType = executorType == null ? defaultExecutorType : executorType;
+
     //这句再做一下保护,囧,防止粗心大意的人将defaultExecutorType设成null?
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
+
     Executor executor;
     //然后就是简单的3个分支，产生3种执行器BatchExecutor/ReuseExecutor/SimpleExecutor
     if (ExecutorType.BATCH == executorType) {
@@ -515,8 +519,10 @@ public class Configuration {
     } else if (ExecutorType.REUSE == executorType) {
       executor = new ReuseExecutor(this, transaction);
     } else {
+      //一般
       executor = new SimpleExecutor(this, transaction);
     }
+
     //如果要求缓存，生成另一种CachingExecutor(默认就是有缓存),装饰者模式,所以默认都是返回CachingExecutor
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);

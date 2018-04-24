@@ -60,7 +60,7 @@ public abstract class BaseExecutor implements Executor {
   protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
   //本地缓存机制（Local Cache）防止循环引用（circular references）和加速重复嵌套查询(一级缓存)
   //本地缓存
-  protected PerpetualCache localCache;
+  protected PerpetualCache localCache;//mark 一级缓存本体(session范围
   //本地输出参数缓存
   protected PerpetualCache localOutputParameterCache;
   protected Configuration configuration;
@@ -166,7 +166,7 @@ public abstract class BaseExecutor implements Executor {
     try {
       //加一,这样递归调用到上面的时候就不会再清局部缓存了
       queryStack++;
-      //先根据cachekey从localCache去查
+      //先根据cachekey从localCache去查 mark 一级缓存
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
       if (list != null) {
         //若查到localCache缓存，处理localOutputParameterCache
@@ -284,10 +284,12 @@ public abstract class BaseExecutor implements Executor {
     }
   }
 
+  //进行新增、删除、修改操作的时候调用
   @Override
   public void clearLocalCache() {
-    if (!closed) {
-      localCache.clear();
+    if (!closed) {//sqlsession没有关闭的话，
+      //清除一级缓存，也就是SqlSession的缓存。
+      localCache.clear();//清除缓存类里面的map
       localOutputParameterCache.clear();
     }
   }
