@@ -24,7 +24,7 @@ import java.util.Map;
  */
 /**
  * JDBC类型枚举
- * 
+ *
  */
 public enum JdbcType {
   /*
@@ -66,6 +66,11 @@ public enum JdbcType {
   STRUCT(Types.STRUCT);
 
   public final int TYPE_CODE;
+  JdbcType(int code) {
+    this.TYPE_CODE = code;
+  }
+
+  //常量编码-JdbcType
   private static Map<Integer,JdbcType> codeLookup = new HashMap<Integer,JdbcType>();
 
   //一开始就将数字对应的枚举型放入hashmap
@@ -75,9 +80,7 @@ public enum JdbcType {
     }
   }
 
-  JdbcType(int code) {
-    this.TYPE_CODE = code;
-  }
+
 
   public static JdbcType forCode(int code)  {
     return codeLookup.get(code);

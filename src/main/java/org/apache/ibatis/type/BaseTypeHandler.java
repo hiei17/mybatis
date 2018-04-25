@@ -15,12 +15,12 @@
  */
 package org.apache.ibatis.type;
 
+import org.apache.ibatis.session.Configuration;
+
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
@@ -28,7 +28,7 @@ import org.apache.ibatis.session.Configuration;
  */
 /**
  * 类型处理器的基类
- * 
+ * 只处理了null
  */
 public abstract class BaseTypeHandler<T> extends TypeReference<T> implements TypeHandler<T> {
 

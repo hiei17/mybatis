@@ -15,10 +15,8 @@
  */
 package org.apache.ibatis.type;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import org.apache.ibatis.domain.misc.RichType;
+import org.junit.Test;
 
 import java.net.URI;
 import java.sql.CallableStatement;
@@ -27,9 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.apache.ibatis.domain.misc.RichType;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class TypeHandlerRegistryTest {
 
