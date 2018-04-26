@@ -34,7 +34,7 @@ public class BeanWrapper extends BaseWrapper {
   //原来的对象
   private Object object;
   //元类
-  private MetaClass metaClass;
+  private MetaClass metaClass;//由bean的class解析得到
 
   public BeanWrapper(MetaObject metaObject, Object object) {
     super(metaObject);
@@ -43,9 +43,9 @@ public class BeanWrapper extends BaseWrapper {
   }
 
   @Override
-  public Object get(PropertyTokenizer prop) {
+  public Object get(PropertyTokenizer prop) {//person[0]
 
-      //如果有index(有中括号),说明是集合，那就要解析集合,调用的是BaseWrapper.resolveCollection 和 getCollectionValue
+      //todo 说明是集合，那就要解析集合,调用的是BaseWrapper.resolveCollection 和 getCollectionValue
     if (prop.getIndex() != null) {
       Object collection = resolveCollection(prop, object);
       return getCollectionValue(prop, collection);
@@ -86,16 +86,19 @@ public class BeanWrapper extends BaseWrapper {
   @Override
   public Class<?> getSetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
+
     if (prop.hasNext()) {
       MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return metaClass.getSetterType(name);
-      } else {
-        return metaValue.getSetterType(prop.getChildren());
       }
-    } else {
-      return metaClass.getSetterType(name);
+
+      return metaValue.getSetterType(prop.getChildren());
+
     }
+
+    return metaClass.getSetterType(name);
+
   }
 
   @Override
@@ -121,15 +124,14 @@ public class BeanWrapper extends BaseWrapper {
         MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
         if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
           return metaClass.hasSetter(name);
-        } else {
-          return metaValue.hasSetter(prop.getChildren());
         }
-      } else {
-        return false;
+        return metaValue.hasSetter(prop.getChildren());
       }
-    } else {
-      return metaClass.hasSetter(name);
+      return false;
     }
+
+    return metaClass.hasSetter(name);
+
   }
 
   @Override
@@ -167,12 +169,15 @@ public class BeanWrapper extends BaseWrapper {
     return metaValue;
   }
 
+  //得到get的Invoker 反射来get
   private Object getBeanProperty(PropertyTokenizer prop, Object object) {
     try {
         //得到getter方法，然后调用
-      Invoker method = metaClass.getGetInvoker(prop.getName());
+      Invoker invoker = metaClass.getGetInvoker(prop.getName());
       try {
-        return method.invoke(object, NO_ARGUMENTS);
+
+        return invoker.invoke(object, NO_ARGUMENTS);
+
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);
       }
